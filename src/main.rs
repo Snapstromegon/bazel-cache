@@ -18,7 +18,18 @@ async fn main() {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
-    let _storage = create_s3_storage();
+    let _storage = Arc::new(RwLock::new(S3Store::new(
+        Bucket::new(
+            "test",
+            Region::Custom {
+                region: String::new(),
+                endpoint: "http://localhost:9000".to_owned(),
+            },
+            Credentials::new(Some("minioadmin"), Some("minioadmin"), None, None, None).unwrap(),
+        )
+        .unwrap()
+        .with_path_style(),
+    )));
     let storage = Arc::new(RwLock::new(InMemoryStore::new()));
 
     let app = Router::new()
@@ -37,18 +48,4 @@ async fn main() {
         .with_graceful_shutdown(Backend::shutdown_signal())
         .await
         .unwrap();
-}
-
-fn create_s3_storage() -> Arc<RwLock<S3Store>> {
-    let mut bucket = Bucket::new(
-        "test",
-        Region::Custom {
-            region: String::new(),
-            endpoint: "http://localhost:9000".to_owned(),
-        },
-        Credentials::new(Some("minioadmin"), Some("minioadmin"), None, None, None).unwrap(),
-    )
-    .unwrap();
-    bucket.set_path_style();
-    Arc::new(RwLock::new(S3Store::new(bucket)))
 }
