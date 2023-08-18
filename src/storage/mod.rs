@@ -1,6 +1,8 @@
+use bytes::Bytes;
+
 pub trait Storage {
-    async fn get(&self, key: &str) -> Option<Vec<u8>>;
-    async fn set(&mut self, key: &str, value: Vec<u8>);
+    async fn get(&self, key: &str) -> Option<Bytes>;
+    async fn set(&mut self, key: &str, value: Bytes);
     async fn remove(&mut self, key: &str);
     async fn list(&self, key: &str) -> Vec<String>;
     async fn clear(&mut self);

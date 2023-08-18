@@ -1,4 +1,5 @@
-use s3::{Bucket, request::ResponseData};
+use bytes::Bytes;
+use s3::Bucket;
 
 use super::Storage;
 
@@ -18,8 +19,12 @@ impl Storage for Store {
         unimplemented!("S3Storage::clear")
     }
 
-    async fn get(&self, key: &str) -> Option<Vec<u8>> {
-        self.bucket.get_object(key).await.ok().map(ResponseData::to_vec)
+    async fn get(&self, key: &str) -> Option<Bytes> {
+        self.bucket
+            .get_object(key)
+            .await
+            .ok()
+            .map(|resp| resp.to_vec().into())
     }
 
     async fn has(&self, key: &str) -> bool {
@@ -34,10 +39,7 @@ impl Storage for Store {
         unimplemented!("S3Storage::remove")
     }
 
-    async fn set(&mut self, key: &str, value: Vec<u8>) {
-        self.bucket
-            .put_object(key, value.as_ref())
-            .await
-            .unwrap();
+    async fn set(&mut self, key: &str, value: Bytes) {
+        self.bucket.put_object(key, value.as_ref()).await.unwrap();
     }
 }

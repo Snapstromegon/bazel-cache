@@ -166,8 +166,8 @@ name = "bazel-cache"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "bytes",
  "rust-s3",
- "serde",
  "tokio",
  "tonic",
  "tracing",

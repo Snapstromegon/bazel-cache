@@ -16,7 +16,7 @@ impl Backend {
     pub async fn get_action<Store: Storage + Sync + Send>(
         Path(path): Path<String>,
         State(cache): State<Arc<RwLock<Store>>>,
-    ) -> Result<Vec<u8>, StatusCode> {
+    ) -> Result<Bytes, StatusCode> {
         if let Some(data) = cache.read().await.get(&format!("ac/{path}")).await {
             tracing::info!("Responding from cache for ac/{}", path);
             Ok(data)
@@ -34,11 +34,7 @@ impl Backend {
             StatusCode::CREATED
         } else {
             tracing::info!("Storing in cache for ac/{}", path);
-            storage
-                .write()
-                .await
-                .set(&format!("ac/{path}"), body.to_vec())
-                .await;
+            storage.write().await.set(&format!("ac/{path}"), body).await;
             StatusCode::CREATED
         }
     }
@@ -68,7 +64,7 @@ impl Backend {
             storage
                 .write()
                 .await
-                .set(&format!("cas/{path}"), body.to_vec())
+                .set(&format!("cas/{path}"), body)
                 .await;
             StatusCode::CREATED
         }
