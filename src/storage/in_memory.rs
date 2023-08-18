@@ -1,5 +1,6 @@
 use bytes::Bytes;
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Cursor, pin::Pin};
+use tokio::io::AsyncRead;
 
 use super::Storage;
 
@@ -17,8 +18,8 @@ impl Store {
 }
 
 impl Storage for Store {
-    async fn get(&self, key: &str) -> Option<Bytes> {
-        self.data.get(key).cloned()
+    async fn get(&self, key: &str) -> Option<Pin<Box<dyn AsyncRead>>> {
+        Some(Box::pin(Cursor::new(self.data.get(key)?.clone())))
     }
 
     async fn set(&mut self, key: &str, value: Bytes) {

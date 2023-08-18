@@ -2,14 +2,14 @@
 #![feature(async_fn_in_trait)]
 
 use axum::{extract::DefaultBodyLimit, routing::get, Router};
-use s3::bucket::Bucket;
-use s3::creds::Credentials;
-use s3::region::Region;
+// use s3::bucket::Bucket;
+// use s3::creds::Credentials;
+// use s3::region::Region;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::RwLock;
 
 mod storage;
-use storage::{InMemoryStore, S3Store};
+use storage::InMemoryStore;
 mod backend;
 use backend::Backend;
 
@@ -18,18 +18,18 @@ async fn main() {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
-    let _storage = Arc::new(RwLock::new(S3Store::new(
-        Bucket::new(
-            "test",
-            Region::Custom {
-                region: String::new(),
-                endpoint: "http://localhost:9000".to_owned(),
-            },
-            Credentials::new(Some("minioadmin"), Some("minioadmin"), None, None, None).unwrap(),
-        )
-        .unwrap()
-        .with_path_style(),
-    )));
+    // let _storage = Arc::new(RwLock::new(S3Store::new(
+    //     Bucket::new(
+    //         "test",
+    //         Region::Custom {
+    //             region: String::new(),
+    //             endpoint: "http://localhost:9000".to_owned(),
+    //         },
+    //         Credentials::new(Some("minioadmin"), Some("minioadmin"), None, None, None).unwrap(),
+    //     )
+    //     .unwrap()
+    //     .with_path_style(),
+    // )));
     let storage = Arc::new(RwLock::new(InMemoryStore::new()));
 
     let app = Router::new()

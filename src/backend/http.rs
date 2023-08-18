@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{pin::Pin, sync::Arc};
 
 use axum::{
     body::Bytes,
@@ -6,7 +6,7 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use tokio::{signal, sync::RwLock};
+use tokio::{io::AsyncRead, signal, sync::RwLock};
 
 use crate::storage::Storage;
 
@@ -16,7 +16,7 @@ impl Backend {
     pub async fn get_action<Store: Storage + Sync + Send>(
         Path(path): Path<String>,
         State(cache): State<Arc<RwLock<Store>>>,
-    ) -> Result<Bytes, StatusCode> {
+    ) -> impl IntoResponse {
         if let Some(data) = cache.read().await.get(&format!("ac/{path}")).await {
             tracing::info!("Responding from cache for ac/{}", path);
             Ok(data)
@@ -48,7 +48,7 @@ impl Backend {
             Ok(data)
         } else {
             tracing::info!("cas/{} not in cache", path);
-            Err((StatusCode::NOT_FOUND, "not found"))
+            Err(StatusCode::NOT_FOUND)
         }
     }
 

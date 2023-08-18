@@ -1,5 +1,8 @@
+use std::pin::Pin;
+
 use bytes::Bytes;
 use s3::Bucket;
+use tokio::io::AsyncRead;
 
 use super::Storage;
 
@@ -19,12 +22,8 @@ impl Storage for Store {
         unimplemented!("S3Storage::clear")
     }
 
-    async fn get(&self, key: &str) -> Option<Bytes> {
-        self.bucket
-            .get_object(key)
-            .await
-            .ok()
-            .map(|resp| resp.to_vec().into())
+    async fn get(&self, key: &str) -> Option<Pin<Box<dyn AsyncRead>>> {
+        Some(self.bucket.get_object_stream(key).await.ok()?)
     }
 
     async fn has(&self, key: &str) -> bool {
