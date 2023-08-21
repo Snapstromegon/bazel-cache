@@ -1,7 +1,11 @@
 #![warn(clippy::pedantic)]
 #![feature(async_fn_in_trait)]
 
-use axum::{extract::DefaultBodyLimit, routing::get, Router};
+use axum::{
+    extract::DefaultBodyLimit,
+    routing::{get, put},
+    Router,
+};
 // use s3::bucket::Bucket;
 // use s3::creds::Credentials;
 // use s3::region::Region;
@@ -33,11 +37,10 @@ async fn main() {
     let storage = Arc::new(RwLock::new(InMemoryStore::new()));
 
     let app = Router::new()
-        .route(
-            "/ac/*path",
-            get(Backend::get_action).put(Backend::put_action),
-        )
-        .route("/cas/*path", get(Backend::get_item).put(Backend::put_item))
+        .route("/ac/*path", get(Backend::get_action))
+        .route("/ac/*path", put(Backend::put_action))
+        .route("/cas/*path", get(Backend::get_item))
+        .route("/cas/*path", put(Backend::put_item))
         .with_state(storage.clone())
         .layer(DefaultBodyLimit::max(1024 * 1024 * 1024));
 

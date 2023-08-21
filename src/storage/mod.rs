@@ -1,7 +1,8 @@
 use std::pin::Pin;
+use anyhow::Result;
 
 use bytes::Bytes;
-use tokio::io::AsyncRead;
+use futures::stream::Stream;
 
 mod in_memory;
 pub use in_memory::Store as InMemoryStore;
@@ -10,8 +11,8 @@ pub use in_memory::Store as InMemoryStore;
 // pub use s3::Store as S3Store;
 
 pub trait Storage {
-    async fn get(&self, key: &str) -> Option<Pin<Box<dyn AsyncRead>>>;
-    async fn set(&mut self, key: &str, value: Bytes);
+    async fn get(&self, key: &str) -> Option<Pin<Box<dyn Stream<Item=Result<Bytes>> + Send>>>;
+    async fn set(&mut self, key: &str, value: Pin<Box<dyn Stream<Item=Result<Bytes>>>>);
     async fn remove(&mut self, key: &str);
     async fn list(&self, key: &str) -> Vec<String>;
     async fn clear(&mut self);
