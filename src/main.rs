@@ -34,7 +34,7 @@ async fn main() {
         .unwrap()
         .with_path_style(),
     )));
-    // let storage = Arc::new(RwLock::new(InMemoryStore::new()));
+    let storage = Arc::new(RwLock::new(InMemoryStore::new()));
 
     let app = Router::new()
         .route("/ac/*path", get(Backend::get_action))
