@@ -7,7 +7,6 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use bytes::Bytes;
 use futures::stream::StreamExt;
 use tokio::{signal, sync::RwLock};
 
@@ -48,21 +47,6 @@ impl Backend {
                 .await;
             StatusCode::CREATED
         }
-    }
-
-    pub async fn test_put_action<Store: Storage + std::marker::Send>(
-        Path(path): Path<String>,
-        State(storage): State<Arc<RwLock<Store>>>,
-        body: BodyStream,
-    ) -> impl IntoResponse {
-        let key = format!("ac/{path}");
-        let mut store = storage.write().await;
-        let result_mapped =
-            body.map(|chunk: Result<Bytes, axum::Error>| chunk.context("Mapping error"));
-
-        let future = store.set(&key, Box::pin(result_mapped));
-        future.await;
-        StatusCode::ACCEPTED
     }
 
     pub async fn get_item<Store: Storage>(

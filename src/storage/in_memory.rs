@@ -27,7 +27,7 @@ impl Storage for Store {
         }))
     }
 
-    async fn set(&mut self, key: &str, value: Pin<Box<dyn Stream<Item=Result<Bytes>>>>) {
+    async fn set(&mut self, key: &str, value: Pin<Box<dyn Stream<Item=Result<Bytes>> + Send>>) {
         let mut result = match value.size_hint() {
             (_, Some(size)) => BytesMut::with_capacity(size),
             _ => BytesMut::new()
