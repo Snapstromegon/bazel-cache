@@ -38,9 +38,10 @@ async fn main() {
 
     let app = Router::new()
         .route("/ac/*path", get(Backend::get_action))
-        .route("/ac/*path", put(Backend::put_action))
+        // .route("/ac/*path", put(Backend::put_action))
         .route("/cas/*path", get(Backend::get_item))
-        .route("/cas/*path", put(Backend::put_item))
+        // .route("/cas/*path", put(Backend::put_item))
+        .route("/cas/*path", put(Backend::test_put_action))
         .with_state(storage.clone())
         .layer(DefaultBodyLimit::max(1024 * 1024 * 1024));
 

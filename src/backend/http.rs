@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
+use anyhow::Context;
 use axum::{
     body::StreamBody,
     extract::{BodyStream, Path, State},
     http::StatusCode,
     response::IntoResponse,
 };
+use bytes::Bytes;
 use futures::stream::StreamExt;
 use tokio::{signal, sync::RwLock};
 
@@ -41,11 +43,26 @@ impl Backend {
                 .await
                 .set(
                     &format!("ac/{path}"),
-                    Box::pin(body.map(|chunk| chunk.map_err(|e| anyhow::Error::new(e)))),
+                    Box::pin(body.map(|chunk| chunk.context("Mapping error"))),
                 )
                 .await;
             StatusCode::CREATED
         }
+    }
+
+    pub async fn test_put_action<Store: Storage + std::marker::Send>(
+        Path(path): Path<String>,
+        State(storage): State<Arc<RwLock<Store>>>,
+        body: BodyStream,
+    ) -> impl IntoResponse {
+        let key = format!("ac/{path}");
+        let mut store = storage.write().await;
+        let result_mapped =
+            body.map(|chunk: Result<Bytes, axum::Error>| chunk.context("Mapping error"));
+
+        let future = store.set(&key, Box::pin(result_mapped));
+        future.await;
+        StatusCode::ACCEPTED
     }
 
     pub async fn get_item<Store: Storage>(
@@ -75,7 +92,7 @@ impl Backend {
                 .await
                 .set(
                     &format!("cas/{path}"),
-                    Box::pin(body.map(|chunk| chunk.map_err(|e| anyhow::Error::new(e)))),
+                    Box::pin(body.map(|chunk| chunk.context("Mapping error"))),
                 )
                 .await;
             StatusCode::CREATED
@@ -101,8 +118,8 @@ impl Backend {
         let terminate = std::future::pending::<()>();
 
         tokio::select! {
-            _ = ctrl_c => {},
-            _ = terminate => {},
+            () = ctrl_c => {},
+            () = terminate => {},
         }
 
         println!("shutting down");
