@@ -8,7 +8,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 async-stream = "0.3.5"
-axum = { version = "0.6.20", features = ["macros"] }
+async-trait = "0.1.73"
+axum = "0.6.20"
 axum-extra = { version = "0.7.7", features = ["async-read-body"] }
 bytes = "1.4.0"
 futures = "0.3.28"

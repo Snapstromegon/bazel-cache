@@ -7,7 +7,7 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use futures::stream::StreamExt;
+use futures::{stream::StreamExt, Stream};
 use tokio::{signal, sync::RwLock};
 
 use crate::storage::Storage;
@@ -15,7 +15,7 @@ use crate::storage::Storage;
 pub struct Backend {}
 
 impl Backend {
-    pub async fn get_action<Store: Storage + Sync + Send>(
+    pub async fn get_action<Store: Storage + ?Sized>(
         Path(path): Path<String>,
         State(cache): State<Arc<RwLock<Store>>>,
     ) -> impl IntoResponse {
@@ -28,15 +28,15 @@ impl Backend {
         }
     }
 
-    pub async fn put_action<Store: Storage + std::marker::Send>(
+    pub async fn put_action<Store: Storage + Sync + ?Sized>(
         Path(path): Path<String>,
         State(storage): State<Arc<RwLock<Store>>>,
         body: BodyStream,
     ) -> impl IntoResponse {
+        tracing::info!("Storing in cache for ac/{} {:?}", path, body.size_hint());
         if storage.read().await.has(&format!("ac/{path}")).await {
             StatusCode::ACCEPTED
         } else {
-            tracing::info!("Storing in cache for ac/{}", path);
             storage
                 .write()
                 .await
@@ -49,7 +49,7 @@ impl Backend {
         }
     }
 
-    pub async fn get_item<Store: Storage>(
+    pub async fn get_item<Store: Storage + ?Sized>(
         Path(path): Path<String>,
         State(storage): State<Arc<RwLock<Store>>>,
     ) -> impl IntoResponse {
@@ -62,12 +62,12 @@ impl Backend {
         }
     }
 
-    pub async fn put_item<Store: Storage + std::marker::Sync>(
+    pub async fn put_item<Store: Storage + Sync + ?Sized>(
         Path(path): Path<String>,
         State(storage): State<Arc<RwLock<Store>>>,
         body: BodyStream,
     ) -> impl IntoResponse {
-        tracing::info!("Storing in cache for cas/{}", path);
+        tracing::info!("Storing in cache for cas/{} {:?}", path, body.size_hint());
         if storage.read().await.has(&format!("ac/{path}")).await {
             StatusCode::CREATED
         } else {

@@ -1,3 +1,4 @@
+use axum::async_trait;
 use bytes::{Bytes, BytesMut};
 use std::{collections::HashMap, pin::Pin};
 use futures::stream::{Stream, StreamExt};
@@ -19,6 +20,7 @@ impl Store {
     }
 }
 
+#[async_trait]
 impl Storage for Store {
     async fn get(&self, key: &str) -> Option<Pin<Box<dyn Stream<Item=Result<Bytes>> + Send>>> {
         let value = self.data.get(key)?.clone();

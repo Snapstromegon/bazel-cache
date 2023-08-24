@@ -1,5 +1,4 @@
 #![warn(clippy::pedantic)]
-#![feature(async_fn_in_trait)]
 
 use axum::{
     extract::DefaultBodyLimit,
@@ -13,7 +12,7 @@ use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::RwLock;
 
 mod storage;
-use storage::{InMemoryStore, S3Store};
+use storage::{InMemoryStore, S3Store, Storage};
 mod backend;
 use backend::Backend;
 
@@ -22,19 +21,7 @@ async fn main() {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
-    let storage = Arc::new(RwLock::new(S3Store::new(
-        Bucket::new(
-            "test",
-            Region::Custom {
-                region: String::new(),
-                endpoint: "http://localhost:9000".to_owned(),
-            },
-            Credentials::new(Some("minioadmin"), Some("minioadmin"), None, None, None).unwrap(),
-        )
-        .unwrap()
-        .with_path_style(),
-    )));
-    let storage = Arc::new(RwLock::new(InMemoryStore::new()));
+    let storage = create_storage(StorageType::InMemory);
 
     let app = Router::new()
         .route("/ac/*path", get(Backend::get_action))
@@ -51,4 +38,28 @@ async fn main() {
         .with_graceful_shutdown(Backend::shutdown_signal())
         .await
         .unwrap();
+}
+
+#[derive(Debug, Clone, Copy)]
+enum StorageType {
+    S3,
+    InMemory,
+}
+
+fn create_storage(storage_type: StorageType) -> Arc<RwLock<dyn Storage + Send + Sync>> {
+    match storage_type {
+        StorageType::InMemory => Arc::new(RwLock::new(InMemoryStore::new())),
+        StorageType::S3 => Arc::new(RwLock::new(S3Store::new(
+            Bucket::new(
+                "test",
+                Region::Custom {
+                    region: String::new(),
+                    endpoint: "http://localhost:9000".to_owned(),
+                },
+                Credentials::new(Some("minioadmin"), Some("minioadmin"), None, None, None).unwrap(),
+            )
+            .unwrap()
+            .with_path_style(),
+        ))),
+    }
 }
